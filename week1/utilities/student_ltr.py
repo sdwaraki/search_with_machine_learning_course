@@ -84,13 +84,27 @@ Called from ltr_utils.py
 :param str ltr_store_name: The name of the LTR store we are using to extract features from
 :param int rescore_size: The number of results to rescore
 :param float main_query_weight: A float indicating how much weight to give results that match in the original query
-:param float rewcore_query_weight: A float indicating how much weight to give results that match in the rescored query
+:param float rescore_query_weight: A float indicating how much weight to give results that match in the rescored query
 '''
 def create_rescore_ltr_query(user_query: str, query_obj, click_prior_query: str, ltr_model_name: str,
                              ltr_store_name: str,
                              rescore_size=500, main_query_weight=1, rescore_query_weight=2):
-    print("IMPLEMENT ME: create_rescore_ltr_query")
-    # query_obj["rescore"] = { ... }
+    query_obj["rescore"] = { 
+            "window_size": rescore_size,
+            "query": {
+                "rescore_query": {
+                    "sltr": {
+                        "params": {
+                            "keywords": user_query
+                        },
+                        "model": ltr_model_name,
+                        "store": ltr_store_name,
+                        "active_features": ["name_match"]
+                    }
+                },
+                "rescore_query_weight": rescore_query_weight 
+        }
+      }
 
 
 ##### Step Extract LTR Logged Features:
