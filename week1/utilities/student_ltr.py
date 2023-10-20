@@ -13,8 +13,8 @@ This should be verey similar to the how training is done in the LTR toy program.
 :param dictionary xgb_params The XGBoost configuration parameters, such as the objective function, e.g. {'objective': 'reg:logistic'} 
 '''
 def train(xgb_train_data, num_rounds=5, xgb_params=None ):
-    print("IMPLEMENT ME: xgb train")
-    xgb.train(xgb_params, xgb_train_data, num_round) 
+    dtrain = xgb.DMatrix(f'{xgb_train_data}?format=libsvm')
+    return xgb.train(xgb_params, dtrain, num_rounds) 
 
 ##### Step 3.b:
 '''
@@ -46,12 +46,27 @@ def create_feature_log_query(query, doc_ids, click_prior_query, featureset_name,
                         "terms": {
                             terms_field: doc_ids
                         }
-                    }
-                ],
-                "query": {
-                    
-                }
+                    },
+                    {  # use the LTR query bring in the LTR feature set
+                            "sltr": {
+                                "_name": "logged_featureset",
+                                "featureset": featureset_name,
+                                "store": ltr_store_name,
+                                "params": {
+                                    "keywords": query
+                                }
+                            }
+                        }
+                ]
             }
+        },
+        "ext": {
+                "ltr_log": {
+                    "log_specs": {
+                        "name": "log_entry",
+                        "named_query": "logged_featureset"
+                    }
+                }
         }
     }
 
