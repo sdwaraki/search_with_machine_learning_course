@@ -14,6 +14,7 @@ This should be verey similar to the how training is done in the LTR toy program.
 '''
 def train(xgb_train_data, num_rounds=5, xgb_params=None ):
     print("IMPLEMENT ME: xgb train")
+    xgb.train(xgb_params, xgb_train_data, num_round) 
 
 ##### Step 3.b:
 '''
@@ -46,7 +47,10 @@ def create_feature_log_query(query, doc_ids, click_prior_query, featureset_name,
                             terms_field: doc_ids
                         }
                     }
-                ]
+                ],
+                "query": {
+                    
+                }
             }
         }
     }
