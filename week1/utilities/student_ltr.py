@@ -36,7 +36,6 @@ all features for all documents in a single query.  See the course content for mo
 :param string terms_field: The name of the field to filter our doc_ids on 
 '''
 def create_feature_log_query(query, doc_ids, click_prior_query, featureset_name, ltr_store_name, size=200, terms_field="_id"):
-    print("IMPLEMENT ME: create_feature_log_query with proper LTR syntax")
     return {
         'size': size,
         'query': {
@@ -118,7 +117,7 @@ and extract the features into a data frame.
 def extract_logged_features(hits, query_id):
     import numpy as np
     import pandas as pd
-    print("IMPLEMENT ME: __log_ltr_query_features: Extract log features out of the LTR:EXT response and place in a data frame")
+    # print("IMPLEMENT ME: __log_ltr_query_features: Extract log features out of the LTR:EXT response and place in a data frame")
     feature_results = {}
     feature_results["doc_id"] = []  # capture the doc id so we can join later
     feature_results["query_id"] = []  # ^^^
@@ -129,6 +128,13 @@ def extract_logged_features(hits, query_id):
         feature_results["doc_id"].append(int(hit['_id']))  # capture the doc id so we can join later
         feature_results["query_id"].append(query_id)  # super redundant, but it will make it easier to join later
         feature_results["sku"].append(int(hit['_id']))
-        feature_results["name_match"].append(rng.random())
+        feature_results["name_match"].append(extractLogEntryValue("name_match", hit))
     frame = pd.DataFrame(feature_results)
-    return frame.astype({'doc_id': 'int64', 'query_id': 'int64', 'sku': 'int64'})
+    return frame.astype({'doc_id': 'int64', 'query_id': 'int64', 'sku': 'int64', 'name_match':'float64'})
+
+
+def extractLogEntryValue(feature_name, hit): 
+    log_entries = hit['fields']['_ltrlog'][0]['log_entry']
+    for entry in log_entries:
+        if entry['name'] == feature_name:
+            return getattr(entry, 'value', 0)
