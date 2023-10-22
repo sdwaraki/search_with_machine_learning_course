@@ -133,16 +133,13 @@ def extract_logged_features(hits, query_id):
         feature_results["doc_id"].append(int(hit['_id']))  # capture the doc id so we can join later
         feature_results["query_id"].append(query_id)  # super redundant, but it will make it easier to join later
         feature_results["sku"].append(int(hit['_id']))
-        feature_results["name_match"].append(extractLogEntryValue("name_match", hit))
-        feature_results["name_phrase_match"].append(extractLogEntryValue("name_phrase_match", hit))
-        feature_results["customer_review_avg"].append(extractLogEntryValue("customer_review_avg", hit))
-        feature_results["customer_review_count"].append(extractLogEntryValue("customer_review_count", hit))
+        log_entries = hit['fields']['_ltrlog'][0]['log_entry']
+        for entry in log_entries:
+            feature_name = entry.get('name', '')
+            feature_value = entry.get('value', 0)
+            if not feature_results.get(feature_name, None):
+                feature_results[feature_name] = []
+            feature_results[feature_name].append(feature_value)
     frame = pd.DataFrame(feature_results)
-    return frame.astype({'doc_id': 'int64', 'query_id': 'int64', 'sku': 'int64', 'name_match':'float64','name_phrase_match':'float64','customer_review_avg':'float64', 'customer_review_count':'int64'})
+    return frame.astype({'doc_id': 'int64', 'query_id': 'int64', 'sku': 'int64'})
 
-
-def extractLogEntryValue(feature_name, hit): 
-    log_entries = hit['fields']['_ltrlog'][0]['log_entry']
-    for entry in log_entries:
-        if entry['name'] == feature_name:
-            return getattr(entry, 'value', 0)

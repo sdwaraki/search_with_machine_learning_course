@@ -30,6 +30,7 @@
       },
       {
         "name": "customer_review_avg",
+        "template_language": "mustache",
         "template": {
           "function_score": {
             "functions": [
@@ -48,6 +49,7 @@
       },
       {
         "name": "customer_review_count",
+        "template_language": "mustache",
         "template": {
           "function_score": {
             "functions": [
