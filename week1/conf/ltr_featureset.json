@@ -212,6 +212,86 @@
             }
           }
         }
+      },
+      {
+        "name": "in_store_availability",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "query": { "match_all": {} },
+            "functions": [
+              {
+                "filter": { "match": { "inStoreAvailability": "true" } },
+                "weight": 1
+              },
+              {
+                "weight": 0
+              }
+            ],
+            "score_mode": "max",
+            "min_score": 0
+          }
+        }
+      },
+      {
+        "name": "online_availability",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "query": { "match_all": {} },
+            "functions": [
+              {
+                "filter": { "match": { "onlineAvailability": "true" } },
+                "weight": 1
+              },
+              {
+                "weight": 0
+              }              
+            ],
+            "score_mode": "max",
+            "min_score": 0
+          }
+        }
+      },
+      {
+        "name": "on_sale",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "query": { "match_all": {} },
+            "functions": [
+              {
+                "filter": { "match": { "onSale": "true" } },
+                "weight": 1
+              },
+              {
+                "weight": 0
+              }              
+            ],
+            "score_mode": "max",
+            "min_score": 0
+          }
+        }
+      },
+      {
+        "name": "digital",
+        "template_language": "mustache",
+        "template": {
+          "function_score": {
+            "query": { "match_all": {} },
+            "functions": [
+              {
+                "filter": { "match": { "digital": "true" } },
+                "weight": 1
+              },
+              {
+                "weight": 0
+              }              
+            ],
+            "score_mode": "max",
+            "min_score": 0
+          }
+        }
       }
     ]
   }
