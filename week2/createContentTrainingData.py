@@ -40,6 +40,7 @@ if args.label == 'name':
 
 def _label_filename(filename):
     tree = ET.parse(filename)
+    # print(f"parsing {filename}")
     root = tree.getroot()
     labels = []
     for child in root:
@@ -69,16 +70,18 @@ def getCategoryFrequency(all_labels):
     df = pd.DataFrame(flattened_list, columns=['Category', 'Product_Name'])
     categoryFrequency = df['Category'].value_counts().to_dict()
 
-   return categoryFrequency
+    return categoryFrequency
 
 if __name__ == '__main__':
     files = glob.glob(f'{directory}/*.xml')
     print("Writing results to %s" % output_file)
     with multiprocessing.Pool() as p:
-        all_labels = tqdm(p.imap(_label_filename, files), total=len(files))
+        all_labels = list(tqdm(p.imap(_label_filename, files), total=len(files)))
         category_frequency_map = getCategoryFrequency(all_labels)
         with open(output_file, 'w') as output:
             for label_list in all_labels:
                 for (cat, name) in label_list:
                     if category_frequency_map[cat] > min_products : 
                         output.write(f'__label__{cat} {name}\n') 
+
+
