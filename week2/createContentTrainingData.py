@@ -4,6 +4,7 @@ import glob
 from tqdm import tqdm
 import os
 import xml.etree.ElementTree as ET
+import pandas as pd
 from pathlib import Path
 
 def transform_name(product_name):
@@ -58,12 +59,26 @@ def _label_filename(filename):
               labels.append((cat, transform_name(name)))
     return labels
 
+def getCategoryFrequency(all_labels):
+    flattened_list = []
+
+    for label_list in all_labels:
+        for item in label_list:
+            flattened_list.append(item)
+    
+    df = pd.DataFrame(flattened_list, columns=['Category', 'Product_Name'])
+    categoryFrequency = df['Category'].value_counts().to_dict()
+
+   return categoryFrequency
+
 if __name__ == '__main__':
     files = glob.glob(f'{directory}/*.xml')
     print("Writing results to %s" % output_file)
     with multiprocessing.Pool() as p:
         all_labels = tqdm(p.imap(_label_filename, files), total=len(files))
+        category_frequency_map = getCategoryFrequency(all_labels)
         with open(output_file, 'w') as output:
             for label_list in all_labels:
                 for (cat, name) in label_list:
-                    output.write(f'__label__{cat} {name}\n')
+                    if category_frequency_map[cat] > min_products : 
+                        output.write(f'__label__{cat} {name}\n') 
