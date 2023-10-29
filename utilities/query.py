@@ -16,6 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(levelname)s:%(message)s')
+use_synonyms = False
 
 # expects clicks and impressions to be in the row
 def create_prior_queries_from_group(
@@ -81,17 +82,6 @@ def create_query(user_query, click_prior_query, filters, sort="_score", sortDir=
                                         "slop": 1,
                                         "boost": 50
                                     }
-                                }
-                            },
-                            {
-                                "multi_match": {
-                                    "query": user_query,
-                                    "type": "phrase",
-                                    "slop": "6",
-                                    "minimum_should_match": "2<75%",
-                                    "fields": ["name^10", "name.hyphens^10", "shortDescription^5",
-                                               "longDescription^5", "department^0.5", "sku", "manufacturer", "features",
-                                               "categoryPath"]
                                 }
                             },
                             {
@@ -167,6 +157,33 @@ def create_query(user_query, click_prior_query, filters, sort="_score", sortDir=
             }
         }
     }
+
+    if use_synonyms == True :
+        query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
+                "multi_match": {
+                                    "query": user_query,
+                                    "type": "phrase",
+                                    "slop": "6",
+                                    "minimum_should_match": "2<75%",
+                                    "fields": ["name.synonyms^10", "name.hyphens^10", "shortDescription^5",
+                                               "longDescription^5", "department^0.5", "sku", "manufacturer", "features",
+                                               "categoryPath"]
+                                }
+        })
+    else: 
+        query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
+                "multi_match": {
+                                    "query": user_query,
+                                    "type": "phrase",
+                                    "slop": "6",
+                                    "minimum_should_match": "2<75%",
+                                    "fields": ["name^10", "name.hyphens^10", "shortDescription^5",
+                                               "longDescription^5", "department^0.5", "sku", "manufacturer", "features",
+                                               "categoryPath"]
+                                }
+        })
+
+
     if click_prior_query is not None and click_prior_query != "":
         query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
             "query_string": {
@@ -212,12 +229,18 @@ if __name__ == "__main__":
                          help='The OpenSearch port')
     general.add_argument('--user',
                          help='The OpenSearch admin.  If this is set, the program will prompt for password too. If not set, use default of admin/admin')
+    general.add_argument('--synonyms', action="store_true", help='Use synonyms')
 
     args = parser.parse_args()
+
+    print(args)
 
     if len(vars(args)) == 0:
         parser.print_usage()
         exit()
+    
+    if args.synonyms:
+        use_synonyms = True 
 
     host = args.host
     port = args.port
@@ -239,14 +262,12 @@ if __name__ == "__main__":
 
     )
     index_name = args.index
-    query_prompt = "\nEnter your query (type 'Exit' to exit or hit ctrl-c):"
-    print(query_prompt)
-    for line in fileinput.input():
-        query = line.rstrip()
-        if query == "Exit":
-            break
-        search(client=opensearch, user_query=query, index=index_name)
 
-        print(query_prompt)
+    while True:
+        query  = input("Enter your query (type 'exit' to quit): ").rstrip()
+        if query.lower() == "exit":
+            break
+        else: 
+            search(client=opensearch, user_query=query, index=index_name)
 
     
