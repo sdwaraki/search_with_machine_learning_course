@@ -5,6 +5,17 @@ from pathlib import Path
 def transform_training_data(title, comment):
     # IMPLEMENT
     return title + ' ' + comment
+    # return title
+
+
+def categorizeRating(rating):
+    if float(rating) > 0 and float(rating) <= 2:
+        return "negative"
+    elif float(rating) > 2 and float(rating) <= 3.5:
+        return "neutral"
+    else:
+        return "positive"
+
 
 
 # Directory for review data
@@ -32,7 +43,7 @@ with open(output_file, 'w') as output:
             with open(os.path.join(directory, filename)) as xml_file:
                 for line in xml_file:
                     if '<rating>'in line:
-                        rating = line[12:15]
+                        rating = categorizeRating(line[12:15])
                     elif '<title>' in line:
                         title = line[11:len(line) - 9]
                     elif '<comment>' in line:
