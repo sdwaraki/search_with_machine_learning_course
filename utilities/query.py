@@ -65,7 +65,7 @@ def create_prior_queries(doc_ids, doc_id_weights,
 
 
 # Hardcoded query here.  Better to use search templates or other query config.
-def create_query(user_query, click_prior_query, filters, sort="_score", sortDir="desc", size=10, source=None):
+def create_query(user_query, click_prior_query, filters, sort="_score", sortDir="desc", size=10, source=None, category = None):
     query_obj = {
         'size': size,
         "sort": [
@@ -183,6 +183,18 @@ def create_query(user_query, click_prior_query, filters, sort="_score", sortDir=
             }
         }
     }
+
+    if should_boost == True:
+        query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
+                "term": {
+                  "categoryPathIds": {
+                    "value": category,
+                    "boost": 50
+                  }
+                }
+        })
+
+
     if click_prior_query is not None and click_prior_query != "":
         query_obj["query"]["function_score"]["query"]["bool"]["should"].append({
             "query_string": {
@@ -225,7 +237,6 @@ def query_to_category(query):
     value = category_label[1][0]
     print(f'label = {label} and threshold = {value}')
 
-
     if(value > category_threshold):
         return label
 
@@ -239,7 +250,7 @@ def search(client, user_query, index="bbuy_products", sort="_score", sortDir="de
     filters = None
 
     #### W3: create filters and boosts
-    if category is not None: 
+    if category is not None and should_boost == False: 
         filters = [
         {
           "bool": {
@@ -258,7 +269,7 @@ def search(client, user_query, index="bbuy_products", sort="_score", sortDir="de
     
 
     # Note: you may also want to modify the `create_query` method above
-    query_obj = create_query(user_query, click_prior_query=None, filters=filters, sort=sort, sortDir=sortDir, source=["name", "shortDescription", "categoryPathIds"])
+    query_obj = create_query(user_query, click_prior_query=None, filters=filters, sort=sort, sortDir=sortDir, source=["name"], category = category)
     logging.info(query_obj)
     response = client.search(query_obj, index=index)
     if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
@@ -284,6 +295,8 @@ if __name__ == "__main__":
     general.add_argument('--qc',
                          help='Enable query classification')
 
+    general.add_argument('--boost', help='Enables boosting of classified queries')
+
     args = parser.parse_args()
 
     if len(vars(args)) == 0:
@@ -297,9 +310,13 @@ if __name__ == "__main__":
         auth = (args.user, password)
     
     should_classify_query = False
+    should_boost = False
     
     if args.qc == 'true':
         should_classify_query = True
+
+    if args.boost == 'true':
+        should_boost = True
 
     base_url = "https://{}:{}/".format(host, port)
     opensearch = OpenSearch(
