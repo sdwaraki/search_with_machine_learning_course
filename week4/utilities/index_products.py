@@ -13,6 +13,7 @@ import fasttext
 from pathlib import Path
 import requests
 import json
+import random
 
 from time import perf_counter
 
@@ -21,9 +22,12 @@ logger.setLevel(logging.INFO)
 logging.basicConfig(format='%(levelname)s:%(message)s')
 
 # IMPLEMENT ME: import the sentence transformers module!
+from sentence_transformers import util
+from sentence_transformers import SentenceTransformer
 
 logger.info("Creating Model")
 # IMPLEMENT ME: instantiate the sentence transformer model!
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 
 # NOTE: this is not a complete list of fields.  If you wish to add more, put in the appropriate XPath expression.
 #TODO: is there a way to do this using XPath/XSL Functions so that we don't have to maintain a big list?
@@ -107,6 +111,12 @@ def get_opensearch():
     return client
 
 
+def fetch_embeddings(names):
+    #logger.info(names)
+    embeddings = model.encode(names)
+    return embeddings
+
+
 def index_file(file, index_name, reduced=False):
     logger.info("Ready to index")
 
@@ -136,11 +146,27 @@ def index_file(file, index_name, reduced=False):
             continue
         if reduced and ('categoryPath' not in doc or 'Best Buy' not in doc['categoryPath'] or 'Movies & Music' in doc['categoryPath']):
             continue
+
         docs.append({'_index': index_name, '_id':doc['sku'][0], '_source' : doc})
+
+        #Collect name into the names array
+        names.append(doc['name'][0])
+
         #docs.append({'_index': index_name, '_source': doc})
         docs_indexed += 1
         if docs_indexed % 200 == 0:
-            logger.info("Indexing")
+            logger.info(f'Indexing {docs_indexed} docs')
+            #call the sentence transformer model 
+            embeddings = fetch_embeddings(names)
+
+            #Append each doc with its associated embedding
+            for idx in range(0, len(docs), 1):
+                doc = docs[idx]
+                doc['_source']['embedding'] = embeddings[idx]
+                #Replace the existing doc along with the embedding
+                docs[idx] = doc
+
+            #append the doc with the appropriate response
             bulk(client, docs, request_timeout=60)
             logger.info(f'{docs_indexed} documents indexed')
             docs = []
